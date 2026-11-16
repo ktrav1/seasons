@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Seasonal Grove (Fall + Winter)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            background: #070b18;
+            overflow: hidden;
+            font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, sans-serif;
+            color: #fff;
+            touch-action: manipulation
+        }
+
+        canvas#c {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block
+        }
+
+        #v {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 2px;
+            height: 2px;
+            opacity: 0;
+            pointer-events: none
+        }
+
+        #fade {
+            position: fixed;
+            inset: 0;
+            z-index: 7;
+            background: #070b18;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .45s
+        }
+
+        #intro {
+            position: fixed;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at 50% 45%, rgba(20, 28, 55, .45), rgba(5, 8, 18, .88));
+            transition: opacity .9s
+        }
+
+        #intro.hide {
+            opacity: 0;
+            pointer-events: none
+        }
+
+        .card {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 20px;
+            padding: 38px 42px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .16);
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 24px 90px rgba(0, 0, 0, .5)
+        }
+
+        .card h1 {
+            margin: 0 0 10px;
+            font-size: 34px;
+            font-weight: 600;
+            letter-spacing: .3px
+        }
+
+        .card p {
+            margin: 0 0 22px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, .85);
+            font-size: 16px
+        }
+
+        .card p.small {
+            margin: 20px 0 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, .6)
+        }
+
+        .btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        button {
+            font: inherit;
+            font-size: 16px;
+            padding: 13px 24px;
+            border-radius: 999px;
+            border: 0;
+            cursor: pointer;
+            color: #1a1206;
+            background: linear-gradient(135deg, #ffe58a, #ff9a3d);
+            font-weight: 600;
+            transition: transform .15s
+        }
+
+        button:hover {
+            transform: scale(1.04)
+        }
+
+        button.ghost {
+            background: rgba(255, 255, 255, .12);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, .25)
+        }
+
+        #toast {
+            position: fixed;
+            left: 50%;
+            top: 22px;
+            transform: translateX(-50%) translateY(-20px);
+            z-index: 9;
+            padding: 10px 20px;
+            border-radius: 999px;
+            background: rgba(8, 12, 22, .8);
+            color: #fff;
+            font-size: 15px;
+            opacity: 0;
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            transition: all .4s;
+            pointer-events: none;
+            max-width: 80vw;
+            text-align: center
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0)
+        }
+
+        #hint {
+            position: fixed;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%);
+            z-index: 4;
+            font-size: 13px;
+            color: rgba(255, 255, 255, .8);
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: rgba(8, 12, 22, .55);
+            opacity: 0;
+            transition: opacity 1s;
+            pointer-events: none;
+            max-width: 92vw;
+            text-align: center;
+            line-height: 1.6
+        }
+
+        #hint.show {
+            opacity: 1
+        }
+
+        /* ---------------- side controller ---------------- */
+        #panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: min(320px, 88vw);
+            z-index: 8;
+            box-sizing: border-box;
+            padding: 20px 18px 30px;
+            overflow-y: auto;
+            font-size: 14px;
+            background: rgba(10, 14, 28, .74);
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+            border-left: 1px solid rgba(255, 255, 255, .14);
+            box-shadow: -20px 0 60px rgba(0, 0, 0, .4);
+            transform: translateX(105%);
+            transition: transform .35s cubic-bezier(.2, .8, .2, 1)
+        }
+
+        #panel.open {
+            transform: none
+        }
+
+        .ph {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px
+        }
+
+        .ph h2 {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 600
+        }
+
+        .sub {
+            margin: 0 0 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, .5)
+        }
+
+        .sec {
+            margin-top: 20px
+        }
+
+        .sec h3 {
+            margin: 0 0 9px;
+            font-size: 11px;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .5);
+            font-weight: 600
+        }
+
+        .pbtn {
+            font-size: 14px;
+            padding: 9px 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, .2);
+            font-weight: 500
+        }
+
+        .pbtn.x {
+            padding: 4px 11px;
+            font-size: 18px;
+            line-height: 1;
+            border-radius: 999px
+        }
+
+        .seg {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px
+        }
+
+        .seg .pbtn {
+            padding: 14px 8px;
+            font-size: 15px;
+            font-weight: 600
+        }
+
+        .seg .pbtn.on[data-season="fall"] {
+            background: linear-gradient(135deg, #ffe58a, #ff9a3d);
+            color: #1a1206;
+            border-color: transparent
+        }
+
+        .seg .pbtn.on[data-season="winter"] {
+            background: linear-gradient(135deg, #e2f4ff, #7cb7ff);
+            color: #0a1630;
+            border-color: transparent
+        }
+
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 10px 0
+        }
+
+        .row label.t {
+            flex: 1
+        }
+
+        .row .val {
+            color: rgba(255, 255, 255, .6);
+            font-variant-numeric: tabular-nums;
+            min-width: 34px;
+            text-align: right
+        }
+
+        .sw {
+            position: relative;
+            width: 42px;
+            height: 24px;
+            flex: none
+        }
+
+        .sw input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 1
+        }
+
+        .sw i {
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .2);
+            transition: .2s
+        }
+
+        .sw i::after {
+            content: "";
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            transition: .2s
+        }
+
+        .sw input:checked+i {
+            background: #ffb347
+        }
+
+        .sw input:checked+i::after {
+            transform: translateX(18px)
+        }
+
+        #panel input[type=range] {
+            width: 100%;
+            accent-color: #ffb347;
+            margin: 4px 0 2px
+        }
+
+        #panel select {
+            width: 100%;
+            font: inherit;
+            font-size: 14px;
+            padding: 9px 10px;
+            border-radius: 12px;
+            color: #fff;
+            background: rgba(255, 255, 255, .1);
+            border: 1px solid rgba(255, 255, 255, .2)
+        }
+
+        #panel select option {
+            color: #111
+        }
+
+        .keys {
+            margin-top: 22px;
+            font-size: 12px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, .45)
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+    <video id="v" playsinline muted></video>
+    <div id="fade"></div>
+
+    <div id="intro">
+        <div class="card">
+            <h1>Seasonal Grove</h1>
+            <p>Walk or wave &mdash; fireflies (fall) or snowflakes (winter) drift where you move, and the pumpkins,
+                snowmen and trees glow as you pass.</p>
+            <div class="btns">
+                <button id="bCam">Start camera</button>
+                <button id="bMouse" class="ghost">Use mouse / touch</button>
+            </div>
+            <p class="small">Use Chrome or Edge and allow camera access. Press F for fullscreen.<br>Double-tap (or press S) any time for the controls and to switch season.</p>
+        </div>
+    </div>
+    <div id="toast"></div>
+    <div id="hint">Double-tap or <b>S</b> controls &nbsp;·&nbsp; <b>1</b> fall &nbsp;·&nbsp; <b>2</b> winter &nbsp;·&nbsp; F fullscreen &nbsp;·&nbsp; M mirror &nbsp;·&nbsp; C switch camera &nbsp;·&nbsp; I list cameras
+        &nbsp;·&nbsp; D motion view &nbsp;·&nbsp; &minus; / + sensitivity &nbsp;·&nbsp; A demo &nbsp;·&nbsp; H hide<br>
+        <b>Focus:</b> P mode (all / zone / one person) &nbsp;·&nbsp; Z draw zone &nbsp;·&nbsp; X clear zone &nbsp;·&nbsp; L re-lock
+        &nbsp;·&nbsp; [ / ] min size</div>
+
+    <!-- side controller (double-tap / double-click anywhere, or press S) -->
+    <div id="panel" aria-hidden="true">
+        <div class="ph"><h2>Controls</h2><button class="pbtn x" id="pClose" title="Close (S / Esc)">&times;</button></div>
+        <p class="sub">Double-tap anywhere or press S to show / hide</p>
+
+        <div class="sec">
+            <h3>Season</h3>
+            <div class="seg">
+                <button class="pbtn" data-season="fall">🍂 Fall</button>
+                <button class="pbtn" data-season="winter">❄️ Winter</button>
+            </div>
+        </div>
+
+        <div class="sec">
+            <h3>Camera</h3>
+            <div class="grid2">
+                <button class="pbtn" id="pCam">Start camera</button>
+                <button class="pbtn" id="pCamNext">Next camera</button>
+                <button class="pbtn" id="pCamList">List cameras</button>
+                <button class="pbtn" id="pFull">Fullscreen</button>
+            </div>
+            <div class="row"><label class="t" for="tMirror">Mirror</label><span class="sw"><input type="checkbox" id="tMirror"><i></i></span></div>
+            <div class="row"><label class="t" for="tDemo">Demo mover</label><span class="sw"><input type="checkbox" id="tDemo"><i></i></span></div>
+            <div class="row"><label class="t" for="tDebug">Motion view</label><span class="sw"><input type="checkbox" id="tDebug"><i></i></span></div>
+            <div class="row" style="margin-bottom:0"><label class="t" for="sSens">Sensitivity</label><span class="val" id="vSens">1.00</span></div>
+            <input type="range" id="sSens" min="0.4" max="4" step="0.05" value="1">
+        </div>
+
+        <div class="sec">
+            <h3>Focus</h3>
+            <select id="selMode">
+                <option value="0">All movement</option>
+                <option value="1">Only inside the zone</option>
+                <option value="2">One person (largest mover in zone)</option>
+            </select>
+            <div class="grid2" style="margin-top:8px">
+                <button class="pbtn" id="pZone">Draw zone</button>
+                <button class="pbtn" id="pClearZone">Clear zone</button>
+                <button class="pbtn" id="pRelock" style="grid-column:1/3">Re-lock (follow next mover)</button>
+            </div>
+            <div class="row" style="margin-bottom:0"><label class="t" for="sMin">Min size to follow</label><span class="val" id="vMin">10</span></div>
+            <input type="range" id="sMin" min="2" max="80" step="2" value="10">
+        </div>
+
+        <div class="sec">
+            <h3>Display</h3>
+            <div class="grid2"><button class="pbtn" id="pHints">Show / hide key hints</button></div>
+        </div>
+
+        <div class="keys">Keys: S panel · 1 fall · 2 winter · F fullscreen · M mirror · C / I cameras · D motion view · A demo · − / + sensitivity · P mode · Z zone · X clear · L re-lock · [ ] size</div>
+    </div>
+
+    <script>
+        (() => {
+            'use strict';
+
+            const $ = id => document.getElementById(id);
+            const cv = $('c'), ctx = cv.getContext('2d');
+            const video = $('v');
+            const TAU = Math.PI * 2;
+            const rand = (a, b) => a + Math.random() * (b - a);
+            const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+
+            let W = 0, H = 0, sc = 1, dpr = 1;
+            let season = 'fall';                           // 'fall' | 'winter'
+            const isWinter = () => season === 'winter';
+
+            /* ------------------------------------------------------------------ */
+            /*  Soft glow sprites                                                  */
+            /* ------------------------------------------------------------------ */
+            function makeGlow(h, s, l) {
+                const c = document.createElement('canvas');
+                c.width = c.height = 64;
+                const g = c.getContext('2d');
+                const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+                gr.addColorStop(0, `hsla(${h},${s}%,${l}%,0.9)`);
+                gr.addColorStop(0.35, `hsla(${h},${s}%,${l}%,0.28)`);
+                gr.addColorStop(1, `hsla(${h},${s}%,${l}%,0)`);
+                g.fillStyle = gr;
+                g.fillRect(0, 0, 64, 64);
+                return c;
+            }
+            const glowWarm = makeGlow(35, 100, 62);      // orange: fall trees, pumpkins
+            const glowFly = makeGlow(62, 100, 66);       // yellow-green: fireflies
+            const glowIce = makeGlow(205, 100, 84);      // icy white-blue: snow, snowmen, winter aura
+            const glowGold = makeGlow(45, 100, 62);
+            const lightGlows = [makeGlow(0, 100, 60), glowGold, makeGlow(210, 100, 66), makeGlow(130, 90, 60)];  // red, gold, blue, green
+            const LIGHT_COLS = ['#ff4a4a', '#ffd34a', '#4aa3ff', '#5cff8a'];
+
+            /* ------------------------------------------------------------------ */
+            /*  Motion field                                                       */
+            /* ------------------------------------------------------------------ */
+            const SW = 64, SH = 36;
+            const mf = new Float32Array(SW * SH);
+            const raw = new Float32Array(SW * SH);
+            const prev = new Float32Array(SW * SH);
+            const cur = new Float32Array(SW * SH);
+            const trail = new Float32Array(SW * SH);
+            const camCanvas = document.createElement('canvas');
+            camCanvas.width = SW; camCanvas.height = SH;
+            const cctx = camCanvas.getContext('2d', { willReadFrequently: true });
+
+            let camOn = false, stream = null, devices = [], devIdx = 0;
+            let mirror = false, sens = 1, demo = true, debug = false, havePrev = false, lastVT = -1;
+
+            /* ------------------------------------------------------------------ */
+            /*  Focus filters: zone + "one person" lock                            */
+            /* ------------------------------------------------------------------ */
+            const cand = new Float32Array(SW * SH);
+            const lab = new Int16Array(SW * SH);
+            const stk = new Int16Array(SW * SH);
+            let zone = null;
+            let pmode = 0;
+            let minArea = 10;
+            let lock = null;
+            let zoneEdit = false, dragA = null;
+            const LOCK_R = 11, LOCK_HOLD = 5000;
+            const MODE_NAMES = ['All movement', 'Only inside the zone', 'One person (largest mover in the zone)'];
+            function saveSettings() {
+                try { localStorage.setItem('afg-focus', JSON.stringify({ zone, pmode, minArea, season, mirror, sens })); } catch (e) { }
+            }
+            function loadSettings() {
+                try {
+                    const o = JSON.parse(localStorage.getItem('afg-focus') || 'null');
+                    if (o) {
+                        zone = o.zone || null; pmode = o.pmode | 0; minArea = o.minArea || 10;
+                        if (o.season === 'fall' || o.season === 'winter') season = o.season;
+                        mirror = !!o.mirror;
+                        if (typeof o.sens === 'number') sens = clamp(o.sens, 0.4, 4);
+                    }
+                } catch (e) { }
+            }
+
+            function filterCandidates(now) {
+                if (pmode >= 1 && zone) {
+                    const x0 = zone.x0 * SW, x1 = zone.x1 * SW, y0 = zone.y0 * SH, y1 = zone.y1 * SH;
+                    for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
+                        if (x + 0.5 < x0 || x + 0.5 > x1 || y + 0.5 < y0 || y + 0.5 > y1) cand[y * SW + x] = 0;
+                    }
+                }
+                if (pmode < 2) return;
+
+                lab.fill(0);
+                const comps = [];
+                for (let i = 0; i < cand.length; i++) {
+                    if (cand[i] <= 0 || lab[i]) continue;
+                    const id = comps.length + 1;
+                    let sp = 0, area = 0, sx = 0, sy = 0;
+                    stk[sp++] = i; lab[i] = id;
+                    while (sp) {
+                        const j = stk[--sp], cx = j % SW, cy = (j / SW) | 0;
+                        area++; sx += cx; sy += cy;
+                        if (cx > 0 && cand[j - 1] > 0 && !lab[j - 1]) { lab[j - 1] = id; stk[sp++] = j - 1; }
+                        if (cx < SW - 1 && cand[j + 1] > 0 && !lab[j + 1]) { lab[j + 1] = id; stk[sp++] = j + 1; }
+                        if (cy > 0 && cand[j - SW] > 0 && !lab[j - SW]) { lab[j - SW] = id; stk[sp++] = j - SW; }
+                        if (cy < SH - 1 && cand[j + SW] > 0 && !lab[j + SW]) { lab[j + SW] = id; stk[sp++] = j + SW; }
+                    }
+                    comps.push({ id, area, x: sx / area, y: sy / area });
+                }
+
+                if (!lock) {
+                    let best = null;
+                    for (const c of comps) if (c.area >= minArea && (!best || c.area > best.area)) best = c;
+                    if (best) lock = { x: best.x, y: best.y, t: now };
+                }
+                const keep = new Uint8Array(comps.length + 1);
+                if (lock) {
+                    let sx = 0, sy = 0, sa = 0;
+                    for (const c of comps) {
+                        if (Math.hypot(c.x - lock.x, (c.y - lock.y) * 1.6) <= LOCK_R) {
+                            keep[c.id] = 1; sx += c.x * c.area; sy += c.y * c.area; sa += c.area;
+                        }
+                    }
+                    if (sa > 0) { lock.x += (sx / sa - lock.x) * 0.6; lock.y += (sy / sa - lock.y) * 0.6; lock.t = now; }
+                    else if (now - lock.t > LOCK_HOLD) lock = null;
+                }
+                for (let i = 0; i < cand.length; i++) if (cand[i] > 0 && !keep[lab[i]]) cand[i] = 0;
+            }
+
+            function mfAt(X, Y) {
+                const cx = (X / W * SW) | 0, cy = (Y / H * SH) | 0;
+                if (cx < 0 || cy < 0 || cx >= SW || cy >= SH) return 0;
+                return mf[cy * SW + cx];
+            }
+
+            function inject(X, Y, r, str) {
+                const cx = X / W * SW, cy = Y / H * SH;
+                const x0 = Math.max(0, Math.floor(cx - r - 1)), x1 = Math.min(SW - 1, Math.ceil(cx + r + 1));
+                const y0 = Math.max(0, Math.floor(cy - r - 1)), y1 = Math.min(SH - 1, Math.ceil(cy + r + 1));
+                for (let y = y0; y <= y1; y++) {
+                    for (let x = x0; x <= x1; x++) {
+                        const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy) / r;
+                        if (d < 1) {
+                            const v = str * (1 - d * d), i = y * SW + x;
+                            if (v > mf[i]) mf[i] = v;
+                        }
+                    }
+                }
+            }
+
+            function processCamera() {
+                if (!camOn || video.readyState < 2) return;
+                if (video.currentTime === lastVT) return;
+                lastVT = video.currentTime;
+                cctx.drawImage(video, 0, 0, SW, SH);
+                const d = cctx.getImageData(0, 0, SW, SH).data;
+
+                const thr = 24 / sens, range = 35 / sens;
+                let over = 0;
+                for (let y = 0; y < SH; y++) {
+                    for (let x = 0; x < SW; x++) {
+                        const i = y * SW + x, p = i * 4;
+                        const g = 0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2];
+                        cur[i] = g;
+                        const diff = havePrev ? Math.abs(g - prev[i]) : 0;
+                        const v = diff > thr ? Math.min(1, (diff - thr) / range) : 0;
+                        if (diff > thr) over++;
+                        raw[y * SW + (mirror ? SW - 1 - x : x)] = v;
+                    }
+                }
+                for (let i = 0; i < prev.length; i++) prev[i] = prev[i] * 0.4 + cur[i] * 0.6;
+                if (!havePrev) { havePrev = true; return; }
+                if (over > SW * SH * 0.55) return;     // auto-exposure flash: ignore frame
+                for (let y = 1; y < SH - 1; y++) {
+                    for (let x = 1; x < SW - 1; x++) {
+                        const i = y * SW + x;
+                        const nb = Math.max(raw[i - 1], raw[i + 1], raw[i - SW], raw[i + SW]) * 0.85;
+                        const v = Math.max(raw[i], nb);
+                        cand[i] = v > 0.35 ? v : 0;
+                    }
+                }
+                filterCandidates(performance.now());
+                for (let i = 0; i < cand.length; i++) if (cand[i] > mf[i]) mf[i] = cand[i];
+            }
+
+            const RX = 8, RY = 5;
+            const hW = new Float32Array(RX * RY), hX = new Float32Array(RX * RY), hY = new Float32Array(RX * RY);
+            let hot = [];
+            function computeHot() {
+                hW.fill(0); hX.fill(0); hY.fill(0);
+                for (let y = 0; y < SH; y++) {
+                    const ry = Math.floor(y * RY / SH);
+                    for (let x = 0; x < SW; x++) {
+                        const v = mf[y * SW + x];
+                        if (v > 0.35) {
+                            const k = ry * RX + Math.floor(x * RX / SW);
+                            hW[k] += v; hX[k] += x * v; hY[k] += y * v;
+                        }
+                    }
+                }
+                hot = [];
+                for (let k = 0; k < RX * RY; k++) {
+                    if (hW[k] > 1.2) {
+                        hot.push({ x: (hX[k] / hW[k] + 0.5) / SW * W, y: (hY[k] / hW[k] + 0.5) / SH * H, s: Math.min(1, hW[k] / 10) });
+                    }
+                }
+            }
+
+            /* ------------------------------------------------------------------ */
+            /*  Night sky, moon, hills (per season)                                */
+            /* ------------------------------------------------------------------ */
+            const bg = document.createElement('canvas');
+            const vig = document.createElement('canvas');
+            let stars = [];
+
+            function buildBackground() {
+                bg.width = vig.width = cv.width;
+                bg.height = vig.height = cv.height;
+                const b = bg.getContext('2d');
+                b.setTransform(dpr, 0, 0, dpr, 0, 0);
+                const winter = isWinter();
+
+                const g = b.createLinearGradient(0, 0, 0, H);
+                if (winter) {
+                    g.addColorStop(0, '#050a24');
+                    g.addColorStop(0.3, '#101b45');
+                    g.addColorStop(0.5, '#27396f');
+                    g.addColorStop(0.58, '#4a5f98');
+                    g.addColorStop(0.62, '#5a6fa5');
+                    g.addColorStop(1, '#262f55');
+                } else {
+                    g.addColorStop(0, '#0a1230');
+                    g.addColorStop(0.35, '#1a1f45');
+                    g.addColorStop(0.55, '#3a2848');
+                    g.addColorStop(0.62, '#2a1f2a');
+                    g.addColorStop(1, '#1a120f');
+                }
+                b.fillStyle = g; b.fillRect(0, 0, W, H);
+
+                stars = [];
+                const ns = winter ? 170 : 130;
+                for (let i = 0; i < ns; i++) {
+                    stars.push({ x: rand(0, W), y: rand(0, H * 0.5), r: rand(0.8, 2.4) * sc * 1.2, alpha: rand(0.3, 0.95), sp: rand(1.5, 5) });
+                }
+
+                if (winter) {                                    // soft aurora ribbons
+                    b.globalCompositeOperation = 'lighter';
+                    for (const [yy, col, a] of [[0.14, '90,230,190', 0.07], [0.22, '120,170,255', 0.06]]) {
+                        const ag = b.createLinearGradient(0, H * (yy - 0.1), 0, H * (yy + 0.12));
+                        ag.addColorStop(0, `rgba(${col},0)`); ag.addColorStop(0.5, `rgba(${col},${a})`); ag.addColorStop(1, `rgba(${col},0)`);
+                        b.fillStyle = ag;
+                        b.beginPath(); b.moveTo(0, H * (yy - 0.1));
+                        for (let x = 0; x <= W; x += W / 30) b.lineTo(x, H * (yy - 0.1) + Math.sin(x * 0.006 + yy * 20) * H * 0.04);
+                        for (let x = W; x >= 0; x -= W / 30) b.lineTo(x, H * (yy + 0.12) + Math.sin(x * 0.005 + yy * 9) * H * 0.05);
+                        b.closePath(); b.fill();
+                    }
+                    b.globalCompositeOperation = 'source-over';
+                }
+
+                b.globalCompositeOperation = 'lighter';
+                const mx = W * 0.8, my = H * 0.2;
+                const mg = b.createRadialGradient(mx, my, 0, mx, my, H * 0.55);
+                if (winter) {
+                    mg.addColorStop(0, 'rgba(200, 225, 255, 0.4)');
+                    mg.addColorStop(0.25, 'rgba(160, 195, 255, 0.15)');
+                    mg.addColorStop(1, 'rgba(160, 195, 255, 0)');
+                } else {
+                    mg.addColorStop(0, 'rgba(255, 238, 200, 0.4)');
+                    mg.addColorStop(0.25, 'rgba(255, 210, 160, 0.15)');
+                    mg.addColorStop(1, 'rgba(255, 210, 160, 0)');
+                }
+                b.fillStyle = mg; b.fillRect(0, 0, W, H);
+                b.globalCompositeOperation = 'source-over';
+                b.fillStyle = winter ? '#eef5ff' : '#fff3d6';
+                b.beginPath(); b.arc(mx, my, 40 * sc, 0, TAU); b.fill();
+                b.fillStyle = winter ? 'rgba(170,195,235,0.35)' : 'rgba(230, 200, 150, 0.35)';
+                for (const [dx, dy, r] of [[-10, -8, 8], [12, 6, 6], [-4, 14, 5]]) {
+                    b.beginPath(); b.arc(mx + dx * sc, my + dy * sc, r * sc, 0, TAU); b.fill();
+                }
+
+                // distant hills
+                b.fillStyle = winter ? 'rgba(120, 140, 195, 0.6)' : 'rgba(30, 22, 40, 0.8)';
+                b.beginPath(); b.moveTo(0, H * 0.55);
+                for (let x = 0; x <= W; x += W / 24) b.lineTo(x, H * (0.5 + 0.04 * Math.sin(x * 0.004) + 0.025 * Math.sin(x * 0.011 + 1)));
+                b.lineTo(W, H * 0.62); b.lineTo(0, H * 0.62); b.closePath(); b.fill();
+
+                const v = vig.getContext('2d');
+                v.setTransform(dpr, 0, 0, dpr, 0, 0);
+                const vg = v.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.hypot(W, H) * 0.58);
+                vg.addColorStop(0, 'rgba(5,8,18,0)'); vg.addColorStop(1, 'rgba(5,8,18,0.5)');
+                v.fillStyle = vg; v.fillRect(0, 0, W, H);
+            }
+
+            /* ------------------------------------------------------------------ */
+            /*  Trees, pumpkins / snowmen, grass, ground details                   */
+            /* ------------------------------------------------------------------ */
+            const LEAF_COLORS = ['#e8650a', '#f59a1c', '#d4380d', '#e0b020', '#b8430a', '#c2410c'];
+            let trees = [], pumpkins = [], grassB = [], groundLeaves = [];
+            const FALL_GRASS = ['#2b3a22', '#1f2d1b', '#3a2a17', '#344524'];
+            const WINTER_GRASS = ['#8197c8', '#6e84b6', '#a0b4de', '#6178a8'];
+            let grassCols = FALL_GRASS;
+
+            const PAL = {
+                green: ['#4f7d2b', '#6b9a33', '#86ad3c', '#3b6a2a'],
+                gold: ['#e8b923', '#f2cf45', '#d9a517'],
+                orange: ['#e8650a', '#f59a1c', '#d9520b'],
+                red: ['#c2410c', '#b3360b']
+            };
+            const MIXES = [[0.45, 0.25, 0.25, 0.05], [0.2, 0.3, 0.45, 0.05], [0.12, 0.5, 0.33, 0.05], [0.35, 0.15, 0.3, 0.2], [0.55, 0.3, 0.15, 0]];
+            function shade(hex, k) {
+                const n = parseInt(hex.slice(1), 16);
+                return 'rgb(' + ((n >> 16 & 255) * k | 0) + ',' + ((n >> 8 & 255) * k | 0) + ',' + ((n & 255) * k | 0) + ')';
+            }
+            function pickColor(mix) {
+                let r = Math.random(), i = 0;
+                while (i < 3 && r > mix[i]) { r -= mix[i]; i++; }
+                const arr = [PAL.green, PAL.gold, PAL.orange, PAL.red][i];
+                return arr[(Math.random() * arr.length) | 0];
+            }
+            function gauss() { return (Math.random() + Math.random() + Math.random() - 1.5) / 1.5; }
+
+            function treeHeight(y) {
+                const d = clamp((y / H - 0.58) / 0.33, 0, 1);
+                const top = H * (0.27 + 0.1 * d + rand(0, 0.08));
+                return Math.max(0.26 * H, (y - top) / 0.88);
+            }
+
+            /* ---- fall tree ---- */
+            function makeTree(x, y, s) {
+                const h = treeHeight(y);
+                const f = Math.min(h / (250 * sc), 1.35);
+                const SWd = Math.round(h * 1.7), SHt = Math.round(h * 1.35);
+                const spr = document.createElement('canvas');
+                spr.width = Math.round(SWd * dpr); spr.height = Math.round(SHt * dpr);
+                const g = spr.getContext('2d');
+                g.setTransform(dpr, 0, 0, dpr, 0, 0);
+                const mix = MIXES[(Math.random() * MIXES.length) | 0];
+                const leaves = [];
+                const trunkW = Math.max(4, 11 * f * sc);
+
+                function branch(bx, by, ang, len, wid, depth) {
+                    const ex = bx + Math.sin(ang) * len, ey = by - Math.cos(ang) * len;
+                    const cxm = (bx + ex) / 2 + Math.cos(ang) * len * rand(-0.12, 0.12);
+                    const cym = (by + ey) / 2 + Math.sin(ang) * len * rand(-0.12, 0.12);
+                    g.lineCap = 'round';
+                    g.strokeStyle = '#4a2b17';
+                    g.lineWidth = wid;
+                    g.beginPath(); g.moveTo(bx, by); g.quadraticCurveTo(cxm, cym, ex, ey); g.stroke();
+                    g.strokeStyle = 'rgba(190,130,80,0.4)';
+                    g.lineWidth = Math.max(0.8, wid * 0.22);
+                    g.beginPath(); g.moveTo(bx - wid * 0.2, by); g.quadraticCurveTo(cxm - wid * 0.2, cym, ex - wid * 0.2, ey); g.stroke();
+                    if (depth <= 2) {
+                        const n = depth === 0 ? 26 : 10;
+                        const rad = (depth === 0 ? 30 : 20) * f * sc;
+                        for (let i = 0; i < n; i++) {
+                            const tt = depth === 0 ? 1 : rand(0.5, 1);
+                            const lx = bx + (ex - bx) * tt + gauss() * rad, ly = by + (ey - by) * tt + gauss() * rad * 0.8;
+                            leaves.push({ x: lx, y: ly, r: rand(0, TAU), z: Math.random() });
+                        }
+                    }
+                    if (depth > 0) {
+                        const kids = (depth > 3 || Math.random() > 0.45) ? 2 : 3;
+                        for (let k = 0; k < kids; k++) {
+                            const off = (kids === 2 ? (k === 0 ? -1 : 1) : (k - 1)) * rand(0.3, 0.55) + rand(-0.1, 0.1);
+                            branch(ex, ey, ang + off, len * rand(0.7, 0.82), wid * 0.66, depth - 1);
+                        }
+                    }
+                }
+                const ox = SWd / 2, oy = SHt - 4;
+                g.fillStyle = '#4a2b17';
+                g.beginPath(); g.moveTo(ox - trunkW * 0.9, oy); g.quadraticCurveTo(ox - trunkW * 0.4, oy - trunkW * 1.4, ox - trunkW * 0.5, oy - trunkW * 2.2);
+                g.lineTo(ox + trunkW * 0.5, oy - trunkW * 2.2); g.quadraticCurveTo(ox + trunkW * 0.4, oy - trunkW * 1.4, ox + trunkW * 0.9, oy); g.closePath(); g.fill();
+                branch(ox, oy - trunkW, rand(-0.06, 0.06), h * 0.3, trunkW, 5);
+
+                leaves.sort((p, q) => p.y - q.y);
+                const ls = 7.5 * f * sc;
+                for (const lf of leaves) {
+                    const col = pickColor(mix);
+                    const dark = lf.z < 0.35;
+                    g.save();
+                    g.translate(lf.x, lf.y); g.rotate(lf.r);
+                    const sz = ls * rand(0.7, 1.25);
+                    g.scale(sz, sz);
+                    g.fillStyle = dark ? shade(col, 0.62) : col;
+                    g.globalAlpha = dark ? 0.9 : 0.95;
+                    g.beginPath();
+                    g.moveTo(0, -1);
+                    g.bezierCurveTo(0.65, -0.6, 0.7, 0.4, 0, 1);
+                    g.bezierCurveTo(-0.7, 0.4, -0.65, -0.6, 0, -1);
+                    g.fill();
+                    if (!dark) {
+                        g.strokeStyle = 'rgba(60,30,10,0.35)';
+                        g.lineWidth = 0.12;
+                        g.beginPath(); g.moveTo(0, -0.9); g.lineTo(0, 0.9); g.stroke();
+                    }
+                    g.restore();
+                }
+                return { x, y, s, h, spr, sw: SWd, sh: SHt, ph: rand(0, TAU), push: 0, pop: 0, lights: null };
+            }
+
+            /* ---- winter: christmas tree ---- */
+            function starPath(g, cx, cy, R, r) {
+                g.beginPath();
+                for (let i = 0; i < 10; i++) {
+                    const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R;
+                    const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr;
+                    if (i) g.lineTo(px, py); else g.moveTo(px, py);
+                }
+                g.closePath();
+            }
+
+            function makeXmasTree(x, y, s) {
+                const h = treeHeight(y);
+                const f = Math.min(h / (250 * sc), 1.35);
+                const SWd = Math.round(h * 0.8), SHt = Math.round(h * 1.06);
+                const spr = document.createElement('canvas');
+                spr.width = Math.round(SWd * dpr); spr.height = Math.round(SHt * dpr);
+                const g = spr.getContext('2d');
+                g.setTransform(dpr, 0, 0, dpr, 0, 0);
+                const cx = SWd / 2, by = SHt - 4;
+                const th = h * 0.07, tw = h * 0.07;
+                const n = 5, span = h * 0.86, tierH = span * 0.34, step = (span - tierH) / (n - 1), maxHalf = h * 0.3;
+                const lights = [];
+
+                // snow mound at the base
+                g.fillStyle = 'rgba(190,208,245,0.28)';
+                g.beginPath(); g.ellipse(cx, by, maxHalf * 1.15, h * 0.03, 0, 0, TAU); g.fill();
+
+                // trunk
+                g.fillStyle = '#4a2b17';
+                g.fillRect(cx - tw / 2, by - th, tw, th + 2);
+
+                for (let i = 0; i < n; i++) {
+                    const bottomY = by - th - i * step, topY = bottomY - tierH, halfW = maxHalf * (1 - i * 0.17);
+                    const tierPath = () => {
+                        g.beginPath(); g.moveTo(cx, topY);
+                        g.quadraticCurveTo(cx + halfW * 0.45, bottomY - tierH * 0.35, cx + halfW, bottomY);
+                        const m = 4;
+                        for (let k = 0; k < m; k++) {
+                            const xa = cx + halfW - 2 * halfW * k / m, xb = cx + halfW - 2 * halfW * (k + 1) / m;
+                            g.quadraticCurveTo((xa + xb) / 2, bottomY + tierH * 0.14, xb, bottomY);
+                        }
+                        g.quadraticCurveTo(cx - halfW * 0.45, bottomY - tierH * 0.35, cx, topY);
+                        g.closePath();
+                    };
+                    const gr = g.createLinearGradient(cx - halfW, 0, cx + halfW, 0);
+                    gr.addColorStop(0, '#103d27'); gr.addColorStop(0.5, '#1f6b3d'); gr.addColorStop(1, '#154a2c');
+                    tierPath(); g.fillStyle = gr; g.fill();
+
+                    // snow cap on the tier
+                    g.save(); tierPath(); g.clip();
+                    const yb = topY + tierH * 0.38, segs = 5, x0 = cx - halfW - 2, x1 = cx + halfW + 2;
+                    g.beginPath(); g.moveTo(x0, topY - 2); g.lineTo(x1, topY - 2); g.lineTo(x1, yb);
+                    for (let k = 0; k < segs; k++) {
+                        const xa = x1 - (x1 - x0) * k / segs, xb = x1 - (x1 - x0) * (k + 1) / segs;
+                        g.quadraticCurveTo((xa + xb) / 2, yb + tierH * 0.16, xb, yb);
+                    }
+                    g.closePath(); g.fillStyle = 'rgba(232,242,255,0.92)'; g.fill();
+                    g.restore();
+                    // frosty rim along the scalloped bottom
+                    g.strokeStyle = 'rgba(225,238,255,0.55)'; g.lineWidth = Math.max(1, 2 * f * sc);
+                    g.beginPath(); g.moveTo(cx + halfW, bottomY);
+                    for (let k = 0; k < 4; k++) {
+                        const xa = cx + halfW - 2 * halfW * k / 4, xb = cx + halfW - 2 * halfW * (k + 1) / 4;
+                        g.quadraticCurveTo((xa + xb) / 2, bottomY + tierH * 0.14, xb, bottomY);
+                    }
+                    g.stroke();
+
+                    // ornaments / lights for this tier
+                    const nl = Math.max(3, Math.round(2 + halfW / (h * 0.045)));
+                    for (let k = 0; k < nl; k++) {
+                        const yy = topY + tierH * rand(0.3, 0.95);
+                        const xx = cx + rand(-1, 1) * halfW * ((yy - topY) / tierH) * 0.8;
+                        lights.push({ x: xx, y: yy, c: (Math.random() * 4) | 0, ph: rand(0, TAU) });
+                    }
+                }
+                // static ornament balls
+                const rb = Math.max(2, h * 0.016);
+                for (const L of lights) {
+                    g.fillStyle = LIGHT_COLS[L.c];
+                    g.beginPath(); g.arc(L.x, L.y, rb, 0, TAU); g.fill();
+                    g.fillStyle = 'rgba(255,255,255,0.6)';
+                    g.beginPath(); g.arc(L.x - rb * 0.3, L.y - rb * 0.3, rb * 0.35, 0, TAU); g.fill();
+                }
+                // star on top
+                const starY = by - th - span - h * 0.02;
+                g.fillStyle = '#ffd86a';
+                starPath(g, cx, starY, h * 0.045, h * 0.02); g.fill();
+
+                return { x, y, s, h, spr, sw: SWd, sh: SHt, ph: rand(0, TAU), push: 0, pop: 0, lights, star: { x: cx, y: starY } };
+            }
+
+            function makePumpkin(x, y, s) {
+                const r = rand(24, 38) * s * sc;
+                return { x, y, s, r, face: Math.random() < 0.55, ph: rand(0, TAU), pop: 0, tilt: rand(-0.08, 0.08) };
+            }
+            function makeSnowman(x, y, s) {
+                const r = rand(22, 32) * s * sc;
+                return { x, y, s, r, ph: rand(0, TAU), pop: 0, tilt: rand(-0.08, 0.08) };
+            }
+
+            function buildGrove() {
+                const winter = isWinter();
+                trees = []; pumpkins = []; groundLeaves = [];
+                grassCols = winter ? WINTER_GRASS : FALL_GRASS;
+                grassB = grassCols.map(() => []);
+
+                const n = clamp(Math.round(W * H / 30000), 7, 14);
+                for (let i = 0; i < n; i++) {
+                    let x = 0, y = 0, s = 1, ok = false;
+                    for (let k = 0; k < 14 && !ok; k++) {
+                        x = rand(0.05, 0.95) * W;
+                        y = H * (0.58 + 0.33 * Math.sqrt(Math.random()));
+                        s = 0.65 + 0.6 * ((y / H - 0.58) / 0.33);
+                        ok = true;
+                        const md = 0.18 * H * s;
+                        for (const o of trees) {
+                            const dx = o.x - x, dy = (o.y - y) * 1.5;
+                            if (dx * dx + dy * dy < md * md) { ok = false; break; }
+                        }
+                    }
+                    if (ok) trees.push(winter ? makeXmasTree(x, y, s) : makeTree(x, y, s));
+                }
+                trees.sort((a, b) => a.y - b.y);
+
+                const np = clamp(Math.round(W * H / 60000), 6, 12);
+                for (let i = 0; i < np; i++) {
+                    const y = H * (0.62 + 0.33 * Math.random());
+                    const s = 0.7 + 0.6 * ((y / H - 0.6) / 0.38);
+                    const px = rand(0.04, 0.96) * W;
+                    pumpkins.push(winter ? makeSnowman(px, y, s) : makePumpkin(px, y, s));
+                }
+                pumpkins.sort((a, b) => a.y - b.y);
+
+                const ng = clamp(Math.round(W * H / 700), 700, 2400);
+                const hm = winter ? 0.55 : 1;
+                for (let i = 0; i < ng; i++) {
+                    const gy = H * (0.52 + 0.5 * Math.pow(Math.random(), 0.75));
+                    const d = (gy / H - 0.5) / 0.5;
+                    const bl = { x: rand(-10, W + 10), y: gy, h: (12 + d * 28) * sc * rand(0.7, 1.3) * hm, ph: rand(0, TAU), push: 0 };
+                    grassB[(Math.random() * grassCols.length) | 0].push(bl);
+                }
+
+                if (winter) {
+                    for (let i = 0; i < 60; i++) {
+                        const y = H * rand(0.6, 0.99);
+                        groundLeaves.push({ x: rand(0, W), y, w: rand(30, 90) * sc * (0.6 + 0.6 * (y / H)), h: rand(4, 10) * sc, ph: rand(0, TAU), sp: rand(1.5, 4), spark: Math.random() < 0.55 });
+                    }
+                } else {
+                    for (let i = 0; i < 40; i++) {
+                        const y = H * rand(0.58, 0.98);
+                        groundLeaves.push({ x: rand(0, W), y, rot: rand(0, TAU), size: rand(7, 14) * sc * (0.7 + 0.5 * (y / H)), col: LEAF_COLORS[(Math.random() * LEAF_COLORS.length) | 0] });
+                    }
+                }
+            }
+
+            /* ------------------------------------------------------------------ */
+            /*  Fireflies (fall) / snowflakes (winter): movement spawns them       */
+            /* ------------------------------------------------------------------ */
+            let ambient = [], flies = [];
+            const MAXFLY = 380;
+
+            function seedAmbient() {
+                ambient = [];
+                const winter = isWinter();
+                for (let i = 0; i < (winter ? 34 : 26); i++) {
+                    ambient.push({
+                        x: rand(0, W), y: rand(H * 0.4, H * 0.95),
+                        vx: rand(-8, 8) * sc, vy: rand(-8, 8) * sc * (winter ? 0.5 : 1),
+                        size: rand(2.5, 5) * sc * (winter ? 0.7 : 1), ph: rand(0, TAU), sp: rand(1, 2.4)
+                    });
+                }
+            }
+
+            function addFly(x, y) {
+                const L = rand(3, 6.5);
+                const winter = isWinter();
+                flies.push({
+                    x, y, vx: rand(-14, 14) * sc, vy: winter ? rand(-6, 14) * sc : -rand(4, 22) * sc, life: L, max: L,
+                    size: rand(3, 6.5) * sc, ph: rand(0, TAU), sp: rand(3, 6), wob: rand(0.8, 2),
+                    rot: rand(0, TAU), vr: rand(-1.2, 1.2)
+                });
+            }
+
+            function updateFlies(dt, t) {
+                const winter = isWinter();
+                for (const f of ambient) {
+                    f.x += (f.vx + Math.sin(t * f.sp + f.ph) * 10 * sc) * dt;
+                    f.y += (f.vy + Math.cos(t * f.sp * 0.8 + f.ph) * 10 * sc) * dt;
+                    if (f.x < 0) f.x = W; if (f.x > W) f.x = 0;
+                    if (f.y < H * 0.35) f.y = H * 0.35; if (f.y > H) f.y = H;
+                }
+                if (flies.length < MAXFLY) {
+                    for (let i = 0; i < mf.length; i++) {
+                        const v = mf[i];
+                        if (v > 0.4 && Math.random() < v * 0.06) {
+                            addFly(((i % SW) + Math.random()) / SW * W, (((i / SW) | 0) + Math.random()) / SH * H);
+                        }
+                    }
+                }
+                const gravY = winter ? 16 * sc : -8 * sc;
+                for (let i = flies.length - 1; i >= 0; i--) {
+                    const f = flies[i];
+                    f.life -= dt;
+                    if (f.life <= 0) { flies[i] = flies[flies.length - 1]; flies.pop(); continue; }
+                    f.vx += (Math.sin(t * f.wob + f.ph) * 18 * sc - f.vx) * dt * 1.2;
+                    f.vy += (gravY + Math.cos(t * f.wob * 0.8 + f.ph) * 10 * sc - f.vy) * dt * 1.2;
+                    f.x += f.vx * dt; f.y += f.vy * dt;
+                    f.rot += f.vr * dt;
+                }
+            }
+
+            function flakePath(x, y, size, rot) {
+                ctx.beginPath();
+                for (let k = 0; k < 6; k++) {
+                    const a = rot + k * TAU / 6, ca = Math.cos(a), sa = Math.sin(a);
+                    ctx.moveTo(x, y); ctx.lineTo(x + ca * size, y + sa * size);
+                    const bx = x + ca * size * 0.62, by = y + sa * size * 0.62;
+                    for (const sg of [-0.65, 0.65]) {
+                        ctx.moveTo(bx, by);
+                        ctx.lineTo(bx + Math.cos(a + sg) * size * 0.3, by + Math.sin(a + sg) * size * 0.3);
+                    }
+                }
+                ctx.stroke();
+            }
+
+            function drawFlies(t) {
+                const winter = isWinter();
+                const gl = winter ? glowIce : glowFly;
+                ctx.globalCompositeOperation = 'lighter';
+                for (const f of ambient) {
+                    const g = 0.35 + 0.65 * Math.max(0, Math.sin(t * 2.2 * f.sp + f.ph));
+                    ctx.globalAlpha = g * 0.85;
+                    ctx.fillStyle = winter ? '#e6f4ff' : '#fff4a0';
+                    ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, TAU); ctx.fill();
+                    const sz = f.size * 7;
+                    ctx.globalAlpha = g * 0.5;
+                    ctx.drawImage(gl, f.x - sz / 2, f.y - sz / 2, sz, sz);
+                }
+                if (winter) { ctx.strokeStyle = '#eaf6ff'; ctx.lineCap = 'round'; }
+                for (const f of flies) {
+                    const a = f.life / f.max;
+                    const env = Math.min(1, (1 - a) * 6) * Math.min(1, a * 2.2);
+                    const g = env * (0.55 + 0.45 * Math.sin(t * f.sp + f.ph));
+                    if (g < 0.02) continue;
+                    if (winter) {
+                        const gs = f.size * 11;
+                        ctx.globalAlpha = g * 0.55;
+                        ctx.drawImage(glowIce, f.x - gs / 2, f.y - gs / 2, gs, gs);
+                        ctx.globalAlpha = Math.min(1, env * (0.7 + 0.3 * Math.sin(t * f.sp + f.ph)));
+                        ctx.lineWidth = Math.max(1, f.size * 0.2);
+                        flakePath(f.x, f.y, f.size * 1.5, f.rot);
+                    } else {
+                        ctx.globalAlpha = Math.min(1, g * 1.1);
+                        ctx.fillStyle = '#fffbb8';
+                        ctx.beginPath(); ctx.arc(f.x, f.y, f.size * 0.8, 0, TAU); ctx.fill();
+                        const sz = f.size * 9;
+                        ctx.globalAlpha = g * 0.6;
+                        ctx.drawImage(glowFly, f.x - sz / 2, f.y - sz / 2, sz, sz);
+                    }
+                }
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            /* falling leaves (fall) / gentle snowfall (winter): ambient only */
+            let leaves = [];
+            function spawnLeaf(anyY) {
+                if (isWinter()) {
+                    leaves.push({
+                        snow: true, x: rand(0, W), y: anyY ? rand(0, H) : -10, vx: rand(-10, 10) * sc, vy: rand(20, 50) * sc,
+                        rot: 0, vr: 0, size: rand(1.2, 3.4) * sc, ph: rand(0, TAU), dead: false
+                    });
+                } else {
+                    leaves.push({
+                        x: rand(0, W), y: -20, vx: rand(-12, 12) * sc, vy: rand(18, 40) * sc,
+                        rot: rand(0, TAU), vr: rand(-1.5, 1.5), size: rand(10, 20) * sc,
+                        col: LEAF_COLORS[(Math.random() * LEAF_COLORS.length) | 0], ph: rand(0, TAU), dead: false
+                    });
+                }
+            }
+            function seedFalling() {
+                leaves = [];
+                if (isWinter()) for (let i = 0; i < 70; i++) spawnLeaf(true);
+            }
+            function drawLeafShape(x, y, rot, size, col, alpha) {
+                ctx.save();
+                ctx.translate(x, y); ctx.rotate(rot); ctx.scale(size, size);
+                ctx.globalAlpha = alpha; ctx.fillStyle = col;
+                ctx.beginPath();
+                ctx.moveTo(0, -1);
+                ctx.bezierCurveTo(0.6, -0.7, 1.1, -0.1, 0.4, 0.5);
+                ctx.bezierCurveTo(0.1, 0.9, 0, 1, 0, 1);
+                ctx.bezierCurveTo(0, 1, -0.1, 0.9, -0.4, 0.5);
+                ctx.bezierCurveTo(-1.1, -0.1, -0.6, -0.7, 0, -1);
+                ctx.fill();
+                ctx.restore();
+                ctx.globalAlpha = 1;
+            }
+
+            /* ------------------------------------------------------------------ */
+            /*  Flora update                                                       */
+            /* ------------------------------------------------------------------ */
+            function updateFlora(dt, t, active) {
+                for (const tr of trees) {
+                    const m = Math.max(mfAt(tr.x, tr.y - tr.h * 0.7), mfAt(tr.x, tr.y));
+                    tr.pop += ((m > 0.12 ? 1 : 0) - tr.pop) * Math.min(1, dt * (m > 0.12 ? 8 : 2));
+                    const mR = mfAt(tr.x + 50 * sc, tr.y - tr.h * 0.5), mL = mfAt(tr.x - 50 * sc, tr.y - tr.h * 0.5);
+                    const target = (mL - mR) * 40 * sc * tr.s;
+                    tr.push += (target - tr.push) * Math.min(1, dt * 6);
+                }
+                for (const p of pumpkins) {
+                    let m = 0;
+                    for (const [dx, dy] of [[0, 0], [-40, 0], [40, 0], [0, -40]]) m = Math.max(m, mfAt(p.x + dx * sc, p.y + dy * sc));
+                    p.pop += ((m > 0.12 ? 1 : 0) - p.pop) * Math.min(1, dt * (m > 0.12 ? 8 : 1.5));
+                }
+                for (const arr of grassB) for (const g of arr) {
+                    if (!active) { g.push *= Math.max(0, 1 - dt * 6); continue; }
+                    const m = mfAt(g.x, g.y - g.h * 0.5);
+                    const target = Math.sin(t * 15 + g.ph) * m * g.h * 0.3;
+                    g.push += (target - g.push) * Math.min(1, dt * 10);
+                }
+            }
+
+            function drawTree(tr, t) {
+                const winter = isWinter();
+                const swayX = Math.sin(t * 0.7 + tr.ph) * 5 * sc * tr.s + tr.push;
+                const k = swayX / tr.h;
+                ctx.save();
+                ctx.transform(1, 0, -k, 1, tr.x, tr.y);
+                ctx.drawImage(tr.spr, -tr.sw / 2, -tr.sh + 4, tr.sw, tr.sh);
+                if (winter) {
+                    ctx.globalCompositeOperation = 'lighter';
+                    const ox = -tr.sw / 2, oy = -tr.sh + 4;
+                    for (const L of tr.lights) {
+                        const a = (0.3 + 0.7 * tr.pop) * (0.55 + 0.45 * Math.sin(t * 2.6 + L.ph));
+                        ctx.globalAlpha = Math.min(1, a);
+                        const gz = tr.h * (0.07 + 0.05 * tr.pop);
+                        ctx.drawImage(lightGlows[L.c], ox + L.x - gz / 2, oy + L.y - gz / 2, gz, gz);
+                    }
+                    const sa = 0.45 + 0.4 * tr.pop + 0.15 * Math.sin(t * 3 + tr.ph);
+                    ctx.globalAlpha = Math.min(1, sa);
+                    const sz = tr.h * (0.16 + 0.14 * tr.pop);
+                    ctx.drawImage(glowGold, ox + tr.star.x - sz / 2, oy + tr.star.y - sz / 2, sz, sz);
+                    ctx.globalCompositeOperation = 'source-over';
+                } else if (tr.pop > 0.05) {
+                    ctx.globalCompositeOperation = 'lighter';
+                    ctx.globalAlpha = 0.14 * tr.pop;
+                    ctx.drawImage(tr.spr, -tr.sw / 2, -tr.sh + 4, tr.sw, tr.sh);
+                }
+                ctx.restore();
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'lighter';
+                if (winter) {
+                    ctx.globalAlpha = Math.min(0.4, 0.02 + 0.22 * tr.pop);
+                    const gs = tr.h * (1.0 + 0.3 * tr.pop);
+                    ctx.drawImage(glowIce, tr.x + swayX - gs / 2, tr.y - tr.h * 0.5 - gs / 2, gs, gs);
+                } else {
+                    ctx.globalAlpha = Math.min(0.5, 0.03 + 0.28 * tr.pop);
+                    const gs = tr.h * (1.1 + 0.3 * tr.pop);
+                    ctx.drawImage(glowWarm, tr.x + swayX - gs / 2, tr.y - tr.h * 0.7 - gs / 2, gs, gs);
+                }
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            function drawPumpkin(p, t) {
+                const r = p.r;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.tilt);
+
+                ctx.fillStyle = 'rgba(8, 5, 10, 0.4)';
+                ctx.beginPath(); ctx.ellipse(0, r * 0.2, r * 1.15, r * 0.3, 0, 0, TAU); ctx.fill();
+
+                const glow = p.face ? 0.4 + 0.6 * p.pop + 0.06 * Math.sin(t * 5 + p.ph) : 0.8 * p.pop;
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalAlpha = Math.min(0.9, 0.1 + glow * 0.55);
+                const gs = r * 5.2;
+                ctx.drawImage(glowWarm, -gs / 2, -r * 0.6 - gs / 2, gs, gs);
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 1;
+
+                const lobes = [[-0.55, '#c2500a'], [0.55, '#c2500a'], [-0.28, '#e0670f'], [0.28, '#e0670f'], [0, '#f27d1c']];
+                for (const [dx, col] of lobes) {
+                    ctx.fillStyle = col;
+                    ctx.beginPath(); ctx.ellipse(dx * r, -r * 0.55, r * (dx === 0 ? 0.55 : 0.5), r * 0.62, 0, 0, TAU); ctx.fill();
+                }
+                ctx.strokeStyle = 'rgba(120, 40, 5, 0.45)';
+                ctx.lineWidth = Math.max(1, 1.6 * sc);
+                for (const dx of [-0.28, 0.28]) {
+                    ctx.beginPath(); ctx.moveTo(dx * r, -r * 1.14); ctx.quadraticCurveTo(dx * r * 1.5, -r * 0.55, dx * r, 0.02 * r); ctx.stroke();
+                }
+                ctx.fillStyle = 'rgba(255, 220, 150, 0.25)';
+                ctx.beginPath(); ctx.ellipse(-r * 0.25, -r * 0.85, r * 0.2, r * 0.3, -0.4, 0, TAU); ctx.fill();
+                ctx.fillStyle = '#4a5a22';
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.1, -r * 1.12); ctx.lineTo(-r * 0.06, -r * 1.42); ctx.lineTo(r * 0.12, -r * 1.38); ctx.lineTo(r * 0.1, -r * 1.12);
+                ctx.closePath(); ctx.fill();
+
+                if (p.face) {
+                    ctx.globalCompositeOperation = 'lighter';
+                    ctx.globalAlpha = Math.min(1, glow);
+                    ctx.fillStyle = '#ffd35a';
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.42, -r * 0.82); ctx.lineTo(-r * 0.18, -r * 0.82); ctx.lineTo(-r * 0.3, -r * 0.56); ctx.closePath(); ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(r * 0.18, -r * 0.82); ctx.lineTo(r * 0.42, -r * 0.82); ctx.lineTo(r * 0.3, -r * 0.56); ctx.closePath(); ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.45, -r * 0.4);
+                    ctx.quadraticCurveTo(0, -r * 0.05, r * 0.45, -r * 0.4);
+                    ctx.quadraticCurveTo(0, -r * 0.28, -r * 0.45, -r * 0.4);
+                    ctx.fill();
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.globalAlpha = 1;
+                }
+                ctx.restore();
+            }
+
+            function drawSnowman(p, t) {
+                const r = p.r;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.tilt * 0.6);
+                const k = 1 + 0.05 * p.pop;
+                ctx.scale(k, k);
+
+                ctx.fillStyle = 'rgba(15, 22, 50, 0.38)';
+                ctx.beginPath(); ctx.ellipse(0, r * 0.1, r * 1.1, r * 0.28, 0, 0, TAU); ctx.fill();
+
+                // icy glow
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalAlpha = Math.min(0.85, 0.08 + 0.5 * p.pop + 0.03 * Math.sin(t * 3 + p.ph));
+                const gs = r * 6;
+                ctx.drawImage(glowIce, -gs / 2, -r * 1.7 - gs / 2, gs, gs);
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 1;
+
+                const ball = (cx, cy, rad) => {
+                    const gr = ctx.createRadialGradient(cx - rad * 0.35, cy - rad * 0.4, rad * 0.1, cx, cy, rad);
+                    gr.addColorStop(0, '#f8fbff'); gr.addColorStop(0.7, '#cfdcf5'); gr.addColorStop(1, '#8fa5d0');
+                    ctx.fillStyle = gr;
+                    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, TAU); ctx.fill();
+                };
+                // arms first (behind the body edge)
+                ctx.strokeStyle = '#5a3a20'; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.5, 2.4 * sc);
+                for (const sg of [-1, 1]) {
+                    ctx.beginPath(); ctx.moveTo(sg * r * 0.5, -r * 2.05); ctx.lineTo(sg * r * 1.3, -r * 2.55);
+                    ctx.moveTo(sg * r * 1.05, -r * 2.4); ctx.lineTo(sg * r * 1.3, -r * 2.2);
+                    ctx.moveTo(sg * r * 1.15, -r * 2.47); ctx.lineTo(sg * r * 1.38, -r * 2.62);
+                    ctx.stroke();
+                }
+                ball(0, -r * 0.85, r * 0.85);
+                ball(0, -r * 2.0, r * 0.62);
+                ball(0, -r * 2.95, r * 0.45);
+
+                // buttons
+                ctx.fillStyle = '#20232e';
+                for (const by of [-1.75, -2.05, -2.3]) { ctx.beginPath(); ctx.arc(0, r * by, r * 0.05, 0, TAU); ctx.fill(); }
+                // scarf
+                ctx.strokeStyle = '#d8343c'; ctx.lineWidth = r * 0.17; ctx.lineCap = 'butt';
+                ctx.beginPath(); ctx.ellipse(0, -r * 2.5, r * 0.44, r * 0.12, 0, 0, Math.PI); ctx.stroke();
+                ctx.fillStyle = '#d8343c'; ctx.fillRect(r * 0.14, -r * 2.48, r * 0.17, r * 0.5);
+                ctx.fillStyle = '#f2f6ff';
+                for (let i = 0; i < 3; i++) ctx.fillRect(r * 0.14, -r * (2.4 - i * 0.14), r * 0.17, r * 0.03);
+                // face
+                ctx.fillStyle = '#14161d';
+                for (const sg of [-1, 1]) { ctx.beginPath(); ctx.arc(sg * r * 0.16, -r * 3.0, r * 0.055, 0, TAU); ctx.fill(); }
+                for (let i = 0; i < 5; i++) {
+                    const a = 0.25 * Math.PI + i * 0.125 * Math.PI;
+                    ctx.beginPath(); ctx.arc(Math.cos(a) * r * 0.2, -r * 2.82 + Math.sin(a) * r * 0.12, r * 0.025, 0, TAU); ctx.fill();
+                }
+                ctx.fillStyle = '#f08a24';
+                ctx.beginPath(); ctx.moveTo(0, -r * 2.95); ctx.lineTo(r * 0.42, -r * 2.87); ctx.lineTo(0, -r * 2.84); ctx.closePath(); ctx.fill();
+                // top hat
+                ctx.fillStyle = '#1b1b24';
+                ctx.beginPath(); ctx.ellipse(0, -r * 3.32, r * 0.56, r * 0.1, 0, 0, TAU); ctx.fill();
+                ctx.fillRect(-r * 0.3, -r * 3.82, r * 0.6, r * 0.5);
+                ctx.fillStyle = '#c0262d'; ctx.fillRect(-r * 0.3, -r * 3.46, r * 0.6, r * 0.1);
+                ctx.restore();
+            }
+
+            function drawProp(p, t) { if (isWinter()) drawSnowman(p, t); else drawPumpkin(p, t); }
+
+            function drawGrass(t) {
+                const wind = 0.7 + 0.3 * Math.sin(t * 0.25);
+                ctx.lineCap = 'round';
+                ctx.lineWidth = (isWinter() ? 1.4 : 1.8) * sc;
+                for (let b = 0; b < grassB.length; b++) {
+                    const arr = grassB[b];
+                    ctx.strokeStyle = grassCols[b];
+                    ctx.beginPath();
+                    for (const g of arr) {
+                        const sway = Math.sin(t * 1.2 + g.ph) * g.h * 0.15 * wind;
+                        ctx.moveTo(g.x, g.y);
+                        ctx.quadraticCurveTo(g.x + sway * 0.4, g.y - g.h * 0.5, g.x + sway + g.push, g.y - g.h);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            function drawGround(t) {
+                if (isWinter()) {
+                    for (const m of groundLeaves) {
+                        ctx.fillStyle = 'rgba(205,220,248,0.13)';
+                        ctx.beginPath(); ctx.ellipse(m.x, m.y, m.w, m.h, 0, 0, TAU); ctx.fill();
+                    }
+                    ctx.globalCompositeOperation = 'lighter';
+                    for (const m of groundLeaves) {
+                        if (!m.spark) continue;
+                        const a = Math.max(0, Math.sin(t * m.sp + m.ph));
+                        if (a < 0.4) continue;
+                        ctx.globalAlpha = (a - 0.4) * 1.2;
+                        ctx.fillStyle = '#e6f4ff';
+                        ctx.beginPath(); ctx.arc(m.x, m.y - m.h * 0.3, 1.4 * sc + a * 1.2 * sc, 0, TAU); ctx.fill();
+                    }
+                    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+                } else {
+                    for (const gl of groundLeaves) drawLeafShape(gl.x, gl.y, gl.rot, gl.size, gl.col, 0.75);
+                }
+            }
+
+            function drawNightSky(t) {
+                ctx.globalCompositeOperation = 'lighter';
+                for (const s of stars) {
+                    const tw = 0.5 + 0.5 * Math.sin(t * s.sp + s.x);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * tw})`;
+                    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TAU); ctx.fill();
+                }
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            /* ------------------------------------------------------------------ */
+            /*  Main loop                                                          */
+            /* ------------------------------------------------------------------ */
+            const dbg = document.createElement('canvas');
+            dbg.width = SW; dbg.height = SH;
+            const dctx = dbg.getContext('2d');
+            const dimg = dctx.createImageData(SW, SH);
+
+            function rebuildScene() {
+                buildBackground();
+                buildGrove();
+                seedAmbient();
+                flies = [];
+                seedFalling();
+            }
+            function resize() {
+                dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+                W = window.innerWidth; H = window.innerHeight;
+                cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+                sc = Math.sqrt(W * H) / 1000;
+                rebuildScene();
+            }
+
+            function update(dt, t) {
+                const winter = isWinter();
+                const dec = Math.pow(0.07, dt);
+                let maxM = 0;
+                for (let i = 0; i < mf.length; i++) { mf[i] *= dec; if (mf[i] > maxM) maxM = mf[i]; }
+                processCamera();
+                if (demo) {
+                    inject(W * (0.5 + 0.38 * Math.sin(t * 0.35)), H * (0.66 + 0.2 * Math.sin(t * 0.53 + 1)), 4, 1);
+                }
+                computeHot();
+                const tdec = Math.pow(0.2, dt);
+                for (let i = 0; i < trail.length; i++) { const v = trail[i] * tdec; trail[i] = mf[i] > v ? mf[i] : v; }
+                const active = maxM > 0.04 || hot.length > 0 || demo;
+
+                updateFlora(dt, t, active);
+                updateFlies(dt, t);
+
+                const cap = winter ? 90 : 22;
+                if (leaves.length < cap && Math.random() < dt * (winter ? 14 : 1.2)) spawnLeaf(false);
+                for (const l of leaves) {
+                    l.x += (l.vx + Math.sin(t * (l.snow ? 1.1 : 1.6) + l.ph) * (l.snow ? 14 : 26) * sc) * dt;
+                    l.y += l.vy * dt;
+                    l.rot += l.vr * dt;
+                    if (l.y > H + 30 || l.x < -40 || l.x > W + 40) l.dead = true;
+                }
+                leaves = leaves.filter(l => !l.dead);
+            }
+
+            function drawAura() {
+                ctx.globalCompositeOperation = 'lighter';
+                const gl = isWinter() ? glowIce : glowFly;
+                const cw = W / SW, chh = H / SH;
+                for (let i = 0; i < trail.length; i++) {
+                    const v = trail[i];
+                    if (v < 0.2) continue;
+                    const cx = i % SW, cy = (i / SW) | 0;
+                    const sz = (50 + 70 * v) * sc;
+                    ctx.globalAlpha = Math.min(0.12, v * 0.16);
+                    ctx.drawImage(gl, (cx + 0.5) * cw - sz / 2, (cy + 0.5) * chh - sz / 2, sz, sz);
+                }
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            function drawFocusOverlay() {
+                let z = zone;
+                if (zoneEdit && dragA) z = dragA.rect;
+                if (!z || !(zoneEdit || debug)) {
+                    if (!debug || !lock) return;
+                }
+                if (z && (zoneEdit || debug)) {
+                    const x0 = z.x0 * W, y0 = z.y0 * H, x1 = z.x1 * W, y1 = z.y1 * H;
+                    if (zoneEdit) {
+                        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                        ctx.fillRect(0, 0, W, y0); ctx.fillRect(0, y1, W, H - y1);
+                        ctx.fillRect(0, y0, x0, y1 - y0); ctx.fillRect(x1, y0, W - x1, y1 - y0);
+                    }
+                    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]);
+                    ctx.strokeRect(x0, y0, x1 - x0, y1 - y0); ctx.setLineDash([]);
+                }
+                if (debug && lock) {
+                    ctx.strokeStyle = 'rgba(120,255,160,0.9)'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc((lock.x + 0.5) / SW * W, (lock.y + 0.5) / SH * H, LOCK_R / SW * W * 0.5, 0, TAU); ctx.stroke();
+                }
+            }
+
+            function draw(t) {
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(bg, 0, 0, W, H);
+                drawNightSky(t);
+
+                drawGround(t);
+                drawGrass(t);
+                let ti = 0, pi = 0;
+                while (ti < trees.length || pi < pumpkins.length) {
+                    if (pi >= pumpkins.length || (ti < trees.length && trees[ti].y <= pumpkins[pi].y)) drawTree(trees[ti++], t);
+                    else drawProp(pumpkins[pi++], t);
+                }
+
+                drawAura();
+                for (const l of leaves) {
+                    if (l.snow) {
+                        ctx.globalAlpha = 0.85; ctx.fillStyle = '#eef6ff';
+                        ctx.beginPath(); ctx.arc(l.x, l.y, l.size, 0, TAU); ctx.fill();
+                        ctx.globalAlpha = 1;
+                    } else drawLeafShape(l.x, l.y, l.rot, l.size, l.col, 0.85);
+                }
+                drawFlies(t);
+
+                ctx.drawImage(vig, 0, 0, W, H);
+                drawFocusOverlay();
+
+                if (debug) {
+                    for (let i = 0; i < mf.length; i++) {
+                        const v = mf[i], p = i * 4;
+                        dimg.data[p] = 255; dimg.data[p + 1] = 220; dimg.data[p + 2] = 80; dimg.data[p + 3] = v * 255;
+                    }
+                    dctx.putImageData(dimg, 0, 0);
+                    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(14, H - 124, 196, 112);
+                    ctx.drawImage(dbg, 16, H - 122, 192, 108);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(16, H - 122, 192, 108);
+                }
+            }
+
+            let last = performance.now(), T = 0;
+            function frame(now) {
+                const dt = Math.min(0.05, (now - last) / 1000);
+                last = now; T += dt;
+                update(dt, T);
+                draw(T);
+                requestAnimationFrame(frame);
+            }
+
+            /* ------------------------------------------------------------------ */
+            /*  Camera, input, UI                                                  */
+            /* ------------------------------------------------------------------ */
+            const toastEl = $('toast'), hintEl = $('hint'), introEl = $('intro'), panel = $('panel'), fadeEl = $('fade');
+            let toastTimer = 0, hintTimer = 0, cursorTimer = 0, seasonTimer = 0;
+            function toast(msg, ms = 2400) {
+                toastEl.textContent = msg;
+                toastEl.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
+            }
+            function showHint(sec) {
+                hintEl.classList.add('show');
+                clearTimeout(hintTimer);
+                if (sec) hintTimer = setTimeout(() => hintEl.classList.remove('show'), sec * 1000);
+            }
+            function hideIntro() { introEl.classList.add('hide'); showHint(10); }
+            const introVisible = () => !introEl.classList.contains('hide');
+
+            /* ---- season switching ---- */
+            function switchSeason(s) {
+                if (s === season) return;
+                clearTimeout(seasonTimer);
+                fadeEl.style.opacity = 1;
+                seasonTimer = setTimeout(() => {
+                    season = s;
+                    rebuildScene();
+                    saveSettings();
+                    updateUI();
+                    fadeEl.style.opacity = 0;
+                    toast(s === 'winter' ? '❄️ Winter' : '🍂 Fall', 1800);
+                }, 450);
+            }
+
+            /* ---- side panel ---- */
+            function setOpen(v) {
+                panel.classList.toggle('open', v);
+                panel.setAttribute('aria-hidden', v ? 'false' : 'true');
+                if (v) { document.body.style.cursor = 'default'; updateUI(); }
+            }
+            const togglePanel = () => setOpen(!panel.classList.contains('open'));
+
+            const tMirror = $('tMirror'), tDemo = $('tDemo'), tDebug = $('tDebug'), sSens = $('sSens'), vSens = $('vSens'),
+                selMode = $('selMode'), sMin = $('sMin'), vMin = $('vMin'), pZone = $('pZone');
+            function updateUI() {
+                document.querySelectorAll('[data-season]').forEach(b => b.classList.toggle('on', b.dataset.season === season));
+                tMirror.checked = mirror; tDemo.checked = demo; tDebug.checked = debug;
+                sSens.value = sens; vSens.textContent = sens.toFixed(2);
+                selMode.value = String(pmode);
+                sMin.value = minArea; vMin.textContent = minArea;
+                pZone.textContent = zoneEdit ? 'Cancel drawing' : (zone ? 'Redraw zone' : 'Draw zone');
+            }
+            // keep taps / drags on the panel from moving the scene or counting as double-taps
+            ['pointerdown', 'pointermove', 'pointerup'].forEach(ev => panel.addEventListener(ev, e => e.stopPropagation()));
+
+            document.querySelectorAll('[data-season]').forEach(b => b.addEventListener('click', () => switchSeason(b.dataset.season)));
+            $('pClose').addEventListener('click', () => setOpen(false));
+            tMirror.addEventListener('change', () => { mirror = tMirror.checked; mf.fill(0); trail.fill(0); saveSettings(); toast('Mirror ' + (mirror ? 'on' : 'off')); });
+            tDemo.addEventListener('change', () => { demo = tDemo.checked; toast('Demo mover ' + (demo ? 'on' : 'off')); });
+            tDebug.addEventListener('change', () => { debug = tDebug.checked; });
+            sSens.addEventListener('input', () => { sens = parseFloat(sSens.value); vSens.textContent = sens.toFixed(2); saveSettings(); });
+            selMode.addEventListener('change', () => {
+                pmode = +selMode.value; lock = null; mf.fill(0); saveSettings();
+                toast('Mode: ' + MODE_NAMES[pmode] + ((pmode > 0 && !zone) ? '  (no zone drawn yet)' : ''), 3000);
+            });
+            sMin.addEventListener('input', () => { minArea = +sMin.value; vMin.textContent = minArea; saveSettings(); });
+            pZone.addEventListener('click', () => {
+                toggleZoneEdit();
+            });
+            $('pClearZone').addEventListener('click', () => { zone = null; lock = null; saveSettings(); updateUI(); toast('Zone cleared: whole view is active'); });
+            $('pRelock').addEventListener('click', () => { lock = null; mf.fill(0); toast('Released: the next person to move will be followed'); });
+            $('pCam').addEventListener('click', () => {
+                startCamera().then(() => { if (introVisible()) hideIntro(); updateUI(); }).catch(e => toast((e && e.message) || 'Could not open the camera', 5000));
+            });
+            $('pCamNext').addEventListener('click', nextCamera);
+            $('pCamList').addEventListener('click', listCameras);
+            $('pFull').addEventListener('click', toggleFullscreen);
+            $('pHints').addEventListener('click', () => hintEl.classList.toggle('show'));
+
+            function toggleZoneEdit() {
+                zoneEdit = !zoneEdit; dragA = null;
+                if (zoneEdit) { setOpen(false); toast('Drag on the screen to draw the active area.', 3500); }
+                else toast('Zone editing off', 2000);
+                updateUI();
+            }
+
+            /* ---- camera ---- */
+            function stopCamera() {
+                if (stream) stream.getTracks().forEach(t => t.stop());
+                stream = null; camOn = false;
+            }
+            async function startCamera(id) {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera API not available. Open this file in Chrome or Edge.');
+                }
+                stopCamera();
+                const v = { width: { ideal: 640 }, height: { ideal: 480 } };
+                if (id) v.deviceId = { exact: id };
+                stream = await navigator.mediaDevices.getUserMedia({ video: v, audio: false });
+                video.srcObject = stream;
+                await video.play();
+                camOn = true; demo = false; havePrev = false; lastVT = -1;
+                const list = await navigator.mediaDevices.enumerateDevices();
+                devices = list.filter(d => d.kind === 'videoinput');
+                const tr = stream.getVideoTracks()[0];
+                const sid = tr.getSettings().deviceId;
+                devIdx = Math.max(0, devices.findIndex(d => d.deviceId === sid));
+                const isDepth = l => /depth|infrared|\bir\b|stereo/i.test(l || '') && !/rgb|colou?r/i.test(l || '');
+                if (!id && isDepth(tr.label)) {              // RealSense: prefer its RGB camera over depth / infrared
+                    const rgb = devices.find(d => !isDepth(d.label) && d.deviceId !== sid);
+                    if (rgb) { devIdx = devices.indexOf(rgb); return startCamera(rgb.deviceId); }
+                }
+                updateUI();
+                toast('Camera ' + (devIdx + 1) + '/' + devices.length + ': ' + (tr.label || 'camera') + (devices.length > 1 ? '  (C = next)' : ''), 4000);
+            }
+            async function listCameras() {
+                try {
+                    const l = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+                    toast(l.length + ' camera(s) seen: ' + (l.map(d => d.label || '(no name yet)').join(' | ') || 'none'), 9000);
+                } catch (e) { toast('Could not list cameras', 4000); }
+            }
+            async function nextCamera() {
+                try {
+                    const l = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+                    if (l.length) devices = l;
+                } catch (e) { }
+                if (devices.length < 2) { listCameras(); return; }
+                devIdx = (devIdx + 1) % devices.length;
+                startCamera(devices[devIdx].deviceId).catch(e => toast(e.message || 'Could not open that camera', 4000));
+            }
+
+            $('bCam').addEventListener('click', () => { startCamera().then(hideIntro).catch(e => toast((e && e.message) || 'Could not open the camera', 5000)); });
+            $('bMouse').addEventListener('click', () => { demo = false; hideIntro(); updateUI(); toast('Move your mouse or finger over the grove. Double-tap for controls.', 3500); });
+
+            function showCursor() {
+                document.body.style.cursor = 'default';
+                clearTimeout(cursorTimer);
+                cursorTimer = setTimeout(() => { if (!panel.classList.contains('open')) document.body.style.cursor = 'none'; }, 2500);
+            }
+            function normRect(a, bx, by) {
+                return { x0: Math.min(a.x, bx), y0: Math.min(a.y, by), x1: Math.max(a.x, bx), y1: Math.max(a.y, by) };
+            }
+
+            /* ---- pointer: movement, zone drawing, double-tap to open controls ---- */
+            let lastTap = { t: 0, x: 0, y: 0 };
+            window.addEventListener('pointermove', e => {
+                showCursor();
+                if (zoneEdit) { if (dragA) dragA.rect = normRect(dragA, clamp(e.clientX / W, 0, 1), clamp(e.clientY / H, 0, 1)); return; }
+                inject(e.clientX, e.clientY, 3.5, 1);
+            });
+            window.addEventListener('pointerdown', e => {
+                if (zoneEdit) { const x = e.clientX / W, y = e.clientY / H; dragA = { x, y, rect: normRect({ x, y }, x, y) }; return; }
+                inject(e.clientX, e.clientY, 6, 1);
+            });
+            window.addEventListener('pointerup', e => {
+                if (!zoneEdit) {                                    // double-tap / double-click anywhere = open or close the controller
+                    if (!introVisible()) {
+                        const now = performance.now();
+                        if (now - lastTap.t < 380 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) {
+                            togglePanel(); lastTap.t = 0;
+                        } else lastTap = { t: now, x: e.clientX, y: e.clientY };
+                    }
+                    return;
+                }
+                if (!dragA) return;
+                const r = dragA.rect; dragA = null;
+                if (r.x1 - r.x0 > 0.05 && r.y1 - r.y0 > 0.05) {
+                    zone = r; lock = null; zoneEdit = false; saveSettings();
+                    if (pmode === 0) { pmode = 1; toast('Zone set. Mode: ' + MODE_NAMES[pmode] + '  (change in the controls)', 3500); }
+                    else toast('Zone set', 2000);
+                    updateUI();
+                }
+            });
+
+            function toggleFullscreen() {
+                if (document.fullscreenElement) document.exitFullscreen();
+                else document.documentElement.requestFullscreen().catch(() => { });
+            }
+            window.addEventListener('keydown', e => {
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                const tg = e.target && e.target.tagName;
+                if (tg === 'SELECT') return;
+                const k = e.key.toLowerCase();
+                if (k === 'f') toggleFullscreen();
+                else if (k === 's') togglePanel();
+                else if (k === '1') switchSeason('fall');
+                else if (k === '2') switchSeason('winter');
+                else if (k === 'escape') { if (zoneEdit) toggleZoneEdit(); else setOpen(false); }
+                else if (k === 'm') { mirror = !mirror; mf.fill(0); trail.fill(0); saveSettings(); updateUI(); toast('Mirror ' + (mirror ? 'on' : 'off')); }
+                else if (k === 'd') { debug = !debug; updateUI(); }
+                else if (k === 'c') nextCamera();
+                else if (k === 'i') listCameras();
+                else if (k === 'a') { demo = !demo; updateUI(); toast('Demo mover ' + (demo ? 'on' : 'off')); }
+                else if (k === 'h') { hintEl.classList.toggle('show'); }
+                else if (k === 'p') { pmode = (pmode + 1) % 3; lock = null; mf.fill(0); saveSettings(); updateUI(); toast('Mode: ' + MODE_NAMES[pmode] + ((pmode > 0 && !zone) ? '  (no zone drawn yet: press Z)' : ''), 3500); }
+                else if (k === 'z') toggleZoneEdit();
+                else if (k === 'x') { zone = null; lock = null; saveSettings(); updateUI(); toast('Zone cleared: whole view is active'); }
+                else if (k === 'l') { lock = null; mf.fill(0); toast('Released: the next person to move will be followed'); }
+                else if (k === '[') { minArea = Math.max(2, minArea - 2); saveSettings(); updateUI(); toast('Minimum size to follow: ' + minArea); }
+                else if (k === ']') { minArea = Math.min(80, minArea + 2); saveSettings(); updateUI(); toast('Minimum size to follow: ' + minArea); }
+                else if (k === '-' || k === '_') { sens = Math.max(0.4, sens / 1.2); saveSettings(); updateUI(); toast('Sensitivity ' + sens.toFixed(2)); }
+                else if (k === '=' || k === '+') { sens = Math.min(4, sens * 1.2); saveSettings(); updateUI(); toast('Sensitivity ' + sens.toFixed(2)); }
+            });
+            window.addEventListener('resize', resize);
+
+            loadSettings();
+            resize();
+            updateUI();
+            requestAnimationFrame(frame);
+        })();
+    </script>
+</body>
+
+</html>
